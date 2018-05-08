@@ -25,13 +25,16 @@ public:
 
 int maze[100][100];
 
-void init(int n){
+void clear_maze(int n){
   for(int i = 0; i < n; i++){
     for(int j = 0; j < n; j++){
       maze[i][j] = 2;
     }
   }
+}
 
+void init(int n){
+  //clear_maze(n);
   srand(time(0));
 }
 
@@ -77,7 +80,7 @@ void change_direction(int &direction){
 //
 // }
 
-void move(int n, point &pos, int direction, bool &end){
+void move(int n, point &pos, int direction, bool &end, bool &retry){
   int offset_x[] = {0, -1, 0, 1},
       offset_y[] = {-1, 0, 1, 0};
   point next(pos.x + offset_x[direction], pos.y + offset_y[direction]);
@@ -95,6 +98,7 @@ void move(int n, point &pos, int direction, bool &end){
       cout << next.x << ' ' << next.y << '\n';
       cout << "!\n";
       end = 1;
+      retry = 1;
     }
   }
 }
@@ -103,7 +107,7 @@ bool on_border(int n, point pos){
   return (pos.x == 0 || pos.y == 0) || (pos.x == n-1 || pos.y == n-1);
 }
 
-void main_path(int n, int min_length){
+void main_path(int n, int min_length, bool &retry){
   point pos(rand()%(n-2)+1, 0), last = pos, to_be_bordered(-1, -1), next;
   int length = 1,
       direction = 2,
@@ -111,6 +115,8 @@ void main_path(int n, int min_length){
       offset_y[] = {-1, 0, 1, 0},
       move_attempts = 0;
   bool end = 0;
+
+  retry = 0;
 
   clear_spot(n, pos);
   while(!end){
@@ -124,7 +130,7 @@ void main_path(int n, int min_length){
 
     while(pos.equal_to(next) && !end){
       move_attempts++;
-      move(n, next, direction, end);
+      move(n, next, direction, end, retry);
 
       if(length < min_length && on_border(n, next)){
         next = pos;
@@ -136,6 +142,7 @@ void main_path(int n, int min_length){
       if(move_attempts > 4){
         end = 1;
         cout << "stuck\n";
+        retry = 1;
       }
     }
     move_attempts = 0;
@@ -160,12 +167,20 @@ void main_path(int n, int min_length){
   border_spot(n, pos);
 
   cout << "length: " << length << '\n';
+
+  if(length < min_length){
+    retry = 1;
+  }
 }
 
 void generate(int n, int min_length){
   point start;
+  bool try_main_path = 1;
 
-  main_path(n, min_length);
+  while(try_main_path){
+    clear_maze(n);
+    main_path(n, min_length, try_main_path);
+  }
 
   start = search_space(n);
 }
