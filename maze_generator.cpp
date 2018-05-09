@@ -25,22 +25,22 @@ public:
 
 int maze[100][100];
 
-void clear_maze(int n){
-  for(int i = 0; i < n; i++){
-    for(int j = 0; j < n; j++){
+void clear_maze(int height, int width){
+  for(int i = 0; i < height; i++){
+    for(int j = 0; j < width; j++){
       maze[i][j] = 2;
     }
   }
 }
 
-void init(int n){
+void init(int height, int width){
   //clear_maze(n);
   srand(time(0));
 }
 
-point search_space(int n){
-  for(int i = 0; i < n; i++){
-    for(int j = 0; j < n; j++){
+point search_space(int height, int width){
+  for(int i = 0; i < height; i++){
+    for(int j = 0; j < width; j++){
       if(maze[i][j] == 2){
         return point(i, j);
       }
@@ -50,7 +50,7 @@ point search_space(int n){
   return point(-1, -1);
 }
 
-void border_spot(int n, point spot){
+void border_spot(int height, int width, point spot){
   point border_point;
   int offset_x[] = { 0, -1, -1, -1, 0, 1, 1,  1},
       offset_y[] = {-1, -1,  0,  1, 1, 1, 0, -1};
@@ -59,14 +59,14 @@ void border_spot(int n, point spot){
     border_point.x = spot.x + offset_x[i];
     border_point.y = spot.y + offset_y[i];
 
-    if(maze[border_point.x][border_point.y] == 2){
-      maze[border_point.x][border_point.y] = 1;
+    if(maze[border_point.y][border_point.x] == 2){
+      maze[border_point.y][border_point.x] = 1;
     }
   }
 }
 
-void clear_spot(int n, point spot){
-  maze[spot.x][spot.y] = 0;
+void clear_spot(int height, int width, point spot){
+  maze[spot.y][spot.x] = 0;
 }
 
 void change_direction(int &direction){
@@ -76,22 +76,22 @@ void change_direction(int &direction){
   direction %= 4;
 }
 
-void move(int n, point &pos, int direction){
+void move(int height, int width, point &pos, int direction){
   int offset_x[] = {0, -1, 0, 1},
       offset_y[] = {-1, 0, 1, 0};
   point next(pos.x + offset_x[direction], pos.y + offset_y[direction]);
 
-  if(maze[next.x][next.y] == 2){
+  if(maze[next.y][next.x] == 2){
     pos = next;
   }
 }
 
-bool on_border(int n, point pos){
-  return (pos.x == 0 || pos.y == 0) || (pos.x == n-1 || pos.y == n-1);
+bool on_border(int height, int width, point pos){
+  return (pos.x == 0 || pos.y == 0) || (pos.x == width-1 || pos.y == height-1);
 }
 
-void main_path(int n, int min_length, bool &retry){
-  point pos(rand()%(n-2)+1, 0), last = pos, to_be_bordered(-1, -1), next;
+void main_path(int height, int width, int min_length, bool &retry){
+  point pos(0, rand()%(height-2)+1), last = pos, to_be_bordered(-1, -1), next;
   int length = 1,
       direction = 2,
       offset_x[] = {0, -1, 0, 1},
@@ -101,7 +101,7 @@ void main_path(int n, int min_length, bool &retry){
 
   retry = 0;
 
-  clear_spot(n, pos);
+  clear_spot(height, width, pos);
   while(!end){
     if(rand()%4 >= 3){
       // cout << "was " << direction << ' ';
@@ -117,9 +117,9 @@ void main_path(int n, int min_length, bool &retry){
         direction += 1;
         direction %= 4;
       }
-      move(n, next, direction);
+      move(height, width, next, direction);
 
-      if(length < min_length && on_border(n, next)){
+      if(length < min_length && on_border(height, width, next)){
         next = pos;
       }
 
@@ -131,9 +131,9 @@ void main_path(int n, int min_length, bool &retry){
     move_attempts = 0;
     pos = next;
 
-    clear_spot(n, pos);
+    clear_spot(height, width, pos);
     if(to_be_bordered.x != -1){
-      border_spot(n, to_be_bordered);
+      border_spot(height, width, to_be_bordered);
     }
 
     to_be_bordered = last;
@@ -141,13 +141,13 @@ void main_path(int n, int min_length, bool &retry){
 
     length++;
 
-    if((pos.x == 0 || pos.x == n-1) || (pos.y == 0 || pos.y == n-1)){
+    if(on_border(height, width, pos)){
       end = 1;
     }
   }
 
-  border_spot(n, last);
-  border_spot(n, pos);
+  border_spot(height, width, last);
+  border_spot(height, width, pos);
 
   cout << "length: " << length << '\n';
 
@@ -156,21 +156,21 @@ void main_path(int n, int min_length, bool &retry){
   }
 }
 
-void generate(int n, int min_length){
+void generate(int height, int width, int min_length){
   point start;
   bool try_main_path = 1;
 
   while(try_main_path){
-    clear_maze(n);
-    main_path(n, min_length, try_main_path);
+    clear_maze(height, width);
+    main_path(height, width, min_length, try_main_path);
   }
 
-  start = search_space(n);
+  start = search_space(height, width);
 }
 
-void print(int n){
-  for(int i = 0; i < n; i++){
-    for(int j = 0; j < n; j++){
+void print(int height, int width){
+  for(int i = 0; i < height; i++){
+    for(int j = 0; j < width; j++){
       if(maze[i][j] == 2){
         cout << '.';
       } else if(maze[i][j] == 1){
@@ -185,11 +185,11 @@ void print(int n){
 }
 
 int main(){
-  int n = 25, min_length = 100;
+  int height = 20, width = 30, min_length = 100;
 
-  init(n);
+  init(height, width);
 
-  generate(n, min_length);
+  generate(height, width, min_length);
 
-  print(n);
+  print(height, width);
 }
