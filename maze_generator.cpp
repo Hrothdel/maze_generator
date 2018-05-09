@@ -79,7 +79,8 @@ void change_direction(int &direction){
 void move(int height, int width, point &pos, int direction){
   int offset_x[] = {0, -1, 0, 1},
       offset_y[] = {-1, 0, 1, 0};
-  point next(pos.x + offset_x[direction], pos.y + offset_y[direction]);
+  point next(pos.x + offset_x[direction],
+             pos.y + offset_y[direction]);
 
   if(maze[next.y][next.x] == 2){
     pos = next;
@@ -87,16 +88,40 @@ void move(int height, int width, point &pos, int direction){
 }
 
 bool on_border(int height, int width, point pos){
-  return (pos.x == 0 || pos.y == 0) || (pos.x == width-1 || pos.y == height-1);
+  return (pos.x == 0 || pos.y == 0) ||
+         (pos.x == width-1 || pos.y == height-1);
+}
+
+void attempt_to_move(int height, int width, point &pos, int &direction,
+                     int length, int min_length, bool &end, bool &retry){
+  int move_attempts = 0;
+  point next = pos;
+
+  while(pos.equal_to(next) && !end){
+    move_attempts++;
+    if(move_attempts > 1){ // spiraly
+      direction += 1;
+      direction %= 4;
+    }
+    move(height, width, next, direction);
+
+    if(length < min_length && on_border(height, width, next)){
+      next = pos;
+    }
+
+    if(move_attempts > 4){
+      end = 1;
+      retry = 1;
+    }
+  }
+
+  pos = next;
 }
 
 void main_path(int height, int width, int min_length, bool &retry){
-  point pos(0, rand()%(height-2)+1), last = pos, to_be_bordered(-1, -1), next;
+  point pos(0, rand()%(height-2)+1), last = pos, to_be_bordered(-1, -1);
   int length = 1,
-      direction = 2,
-      offset_x[] = {0, -1, 0, 1},
-      offset_y[] = {-1, 0, 1, 0},
-      move_attempts = 0;
+      direction = 2;
   bool end = 0;
 
   retry = 0;
@@ -104,32 +129,11 @@ void main_path(int height, int width, int min_length, bool &retry){
   clear_spot(height, width, pos);
   while(!end){
     if(rand()%4 >= 3){
-      // cout << "was " << direction << ' ';
       change_direction(direction);
-      // cout << "changed direction to: " << direction << '\n';
     }
 
-    next = pos;
-
-    while(pos.equal_to(next) && !end){
-      move_attempts++;
-      if(move_attempts > 1){ // spiraly
-        direction += 1;
-        direction %= 4;
-      }
-      move(height, width, next, direction);
-
-      if(length < min_length && on_border(height, width, next)){
-        next = pos;
-      }
-
-      if(move_attempts > 4){
-        end = 1;
-        retry = 1;
-      }
-    }
-    move_attempts = 0;
-    pos = next;
+    attempt_to_move(height, width, pos, direction,
+                    length, min_length, end, retry);
 
     clear_spot(height, width, pos);
     if(to_be_bordered.x != -1){
