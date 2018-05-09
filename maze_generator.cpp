@@ -76,7 +76,7 @@ void change_direction(int &direction){
   direction %= 4;
 }
 
-void move(int n, point &pos, int direction, bool &end, bool &retry){
+void move(int n, point &pos, int direction){
   int offset_x[] = {0, -1, 0, 1},
       offset_y[] = {-1, 0, 1, 0};
   point next(pos.x + offset_x[direction], pos.y + offset_y[direction]);
@@ -117,7 +117,7 @@ void main_path(int n, int min_length, bool &retry){
         direction += 1;
         direction %= 4;
       }
-      move(n, next, direction, end, retry);
+      move(n, next, direction);
 
       if(length < min_length && on_border(n, next)){
         next = pos;
