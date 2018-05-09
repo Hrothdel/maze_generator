@@ -76,10 +76,6 @@ void change_direction(int &direction){
   direction %= 4;
 }
 
-// bool try_direction(int n, point &pos, int direction){
-//
-// }
-
 void move(int n, point &pos, int direction, bool &end, bool &retry){
   int offset_x[] = {0, -1, 0, 1},
       offset_y[] = {-1, 0, 1, 0};
@@ -87,19 +83,6 @@ void move(int n, point &pos, int direction, bool &end, bool &retry){
 
   if(maze[next.x][next.y] == 2){
     pos = next;
-  } else {
-    direction = (direction + 2) % 4;
-    next.x = pos.x + offset_x[direction];
-    next.y = pos.y + offset_y[direction];
-
-    if(maze[next.x][next.y] == 2){
-      pos = next;
-    } else {
-      cout << next.x << ' ' << next.y << '\n';
-      cout << "!\n";
-      end = 1;
-      retry = 1;
-    }
   }
 }
 
@@ -121,27 +104,27 @@ void main_path(int n, int min_length, bool &retry){
   clear_spot(n, pos);
   while(!end){
     if(rand()%4 >= 3){
-      cout << "was " << direction << ' ';
+      // cout << "was " << direction << ' ';
       change_direction(direction);
-      cout << "changed direction to: " << direction << '\n';
+      // cout << "changed direction to: " << direction << '\n';
     }
 
     next = pos;
 
     while(pos.equal_to(next) && !end){
       move_attempts++;
+      if(move_attempts > 1){ // spiraly
+        direction += 1;
+        direction %= 4;
+      }
       move(n, next, direction, end, retry);
 
       if(length < min_length && on_border(n, next)){
         next = pos;
-        cout << "happened\n";
-
-        change_direction(direction);
       }
 
       if(move_attempts > 4){
         end = 1;
-        cout << "stuck\n";
         retry = 1;
       }
     }
