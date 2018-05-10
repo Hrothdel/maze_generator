@@ -33,8 +33,7 @@ void clear_maze(int height, int width){
   }
 }
 
-void init(int height, int width){
-  //clear_maze(n);
+void initialize(int height, int width){
   srand(time(0));
 }
 
@@ -120,13 +119,12 @@ void attempt_to_move(int height, int width, point &pos, int &direction,
 
 void main_path(int height, int width, int min_length, bool &retry){
   point pos(0, rand()%(height-2)+1), last = pos, to_be_bordered(-1, -1);
-  int length = 1,
-      direction = 2;
+  int length = 1, direction = 2;
   bool end = 0;
 
-  retry = 0;
-
   clear_spot(height, width, pos);
+
+  retry = 0;
   while(!end){
     if(rand()%4 >= 3){
       change_direction(direction);
@@ -191,7 +189,7 @@ void print(int height, int width){
 int main(){
   int height = 20, width = 30, min_length = 100;
 
-  init(height, width);
+  initialize(height, width);
 
   generate(height, width, min_length);
 
