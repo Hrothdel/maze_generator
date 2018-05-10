@@ -37,11 +37,44 @@ void initialize(int height, int width){
   srand(time(0));
 }
 
+bool check_for_space_forward(int height, int width, point pos, int direction){
+  int offset_x[] = {0, -1, 0, 1},
+      offset_y[] = {-1, 0, 1, 0};
+
+  pos.x += offset_x[direction];
+  pos.y += offset_y[direction];
+
+  return maze[pos.y][pos.x] == 0;
+}
+
+point check_for_adjecent_wall(int height, int width, int i, int j){
+  int offset_x[] = {0, -1, 0, 1},
+      offset_y[] = {-1, 0, 1, 0};
+  point pos;
+
+  for(int k = 0; k < 4; k++){
+    pos.x = j + offset_x[k];
+    pos.y = i + offset_y[k];
+
+    if(maze[pos.y][pos.x] == 1 &&
+       check_for_space_forward(height, width, pos, k)){
+      return pos;
+    }
+  }
+
+  return point(-1, -1);
+}
+
 point search_space(int height, int width){
+  point pos(-1, -1);
   for(int i = 0; i < height; i++){
     for(int j = 0; j < width; j++){
       if(maze[i][j] == 2){
-        return point(i, j);
+        pos = check_for_adjecent_wall(height, width, i, j);
+
+        if(pos.x != -1){
+          return pos;
+        }
       }
     }
   }
@@ -168,6 +201,11 @@ void generate(int height, int width, int min_length){
   }
 
   start = search_space(height, width);
+  while(start.x != -1){
+    maze[start.y][start.x] = 3;
+
+    start = search_space(height, width);
+  }
 }
 
 void print(int height, int width){
@@ -177,6 +215,8 @@ void print(int height, int width){
         cout << '.';
       } else if(maze[i][j] == 1){
         cout << '#';
+      } else if(maze[i][j] == 3){
+        cout << '!';
       } else {
         cout << ' ';
       }
