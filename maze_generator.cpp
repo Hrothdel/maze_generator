@@ -25,6 +25,11 @@ public:
 
 int maze[100][100];
 
+bool on_border(int height, int width, point pos){
+  return (pos.x == 0 || pos.y == 0) ||
+         (pos.x == width-1 || pos.y == height-1);
+}
+
 void clear_maze(int height, int width){
   for(int i = 0; i < height; i++){
     for(int j = 0; j < width; j++){
@@ -40,6 +45,10 @@ void initialize(int height, int width){
 bool check_for_space_forward(int height, int width, point pos, int direction){
   int offset_x[] = {0, -1, 0, 1},
       offset_y[] = {-1, 0, 1, 0};
+
+  if(on_border(height, width, pos)){
+    return 0;
+  }
 
   pos.x += offset_x[direction];
   pos.y += offset_y[direction];
@@ -101,6 +110,20 @@ void clear_spot(int height, int width, point spot){
   maze[spot.y][spot.x] = 0;
 }
 
+void fill_in_spot(point spot){
+  maze[spot.y][spot.x] = 1;
+}
+
+void fill_in_unused(int height, int width){
+  for(int i = 0; i < height; i++){
+    for(int j = 0; j < width; j++){
+      if(maze[i][j] == 2){
+        fill_in_spot(point(j, i));
+      }
+    }
+  }
+}
+
 void change_direction(int &direction){
   int last = direction;
 
@@ -117,11 +140,6 @@ void move(int height, int width, point &pos, int direction){
   if(maze[next.y][next.x] == 2){
     pos = next;
   }
-}
-
-bool on_border(int height, int width, point pos){
-  return (pos.x == 0 || pos.y == 0) ||
-         (pos.x == width-1 || pos.y == height-1);
 }
 
 void attempt_to_move(int height, int width, point &pos, int &direction,
@@ -184,28 +202,70 @@ void main_path(int height, int width, int min_length, bool &retry){
   border_spot(height, width, last);
   border_spot(height, width, pos);
 
-  cout << "length: " << length << '\n';
+  cout << "try length: " << length << '\n';
 
   if(length < min_length){
     retry = 1;
   }
 }
 
-void generate(int height, int width, int min_length){
+void secondary_path(int height, int width, point pos,
+                    int min_length, int max_length){
+  bool end = 0, useless_flag;
+  point next, last = pos, to_be_bordered(-1, -1);
+  int direction = rand()%4, length = 0;
+
+  clear_spot(height, width, pos);
+
+  while(!end){
+    if(rand()%4 >= 1){
+      change_direction(direction);
+    }
+
+    attempt_to_move(height, width, pos, direction,
+                    length, min_length, end, useless_flag);
+
+    if(!on_border(height, width, pos)){
+      clear_spot(height, width, pos);
+    }
+    if(to_be_bordered.x != -1){
+      border_spot(height, width, to_be_bordered);
+    }
+
+    to_be_bordered = last;
+    last = pos;
+
+    length++;
+
+    if(on_border(height, width, pos) || length >= max_length || (length >= min_length && rand()%10 >= 7)){
+      end = 1;
+    }
+  }
+
+  border_spot(height, width, last);
+  border_spot(height, width, pos);
+
+  cout << "secondary length: " << length << '\n';
+}
+
+void generate(int height, int width, int main_min_length, int secondary_min_length, int secondary_max_length){
   point start;
   bool try_main_path = 1;
 
   while(try_main_path){
     clear_maze(height, width);
-    main_path(height, width, min_length, try_main_path);
+    main_path(height, width, main_min_length, try_main_path);
   }
 
   start = search_space(height, width);
   while(start.x != -1){
-    maze[start.y][start.x] = 3;
+    secondary_path(height, width, start,
+                   secondary_min_length, secondary_max_length);
 
     start = search_space(height, width);
   }
+
+  fill_in_unused(height, width);
 }
 
 void print(int height, int width){
@@ -215,8 +275,6 @@ void print(int height, int width){
         cout << '.';
       } else if(maze[i][j] == 1){
         cout << '#';
-      } else if(maze[i][j] == 3){
-        cout << '!';
       } else {
         cout << ' ';
       }
@@ -227,11 +285,13 @@ void print(int height, int width){
 }
 
 int main(){
-  int height = 20, width = 30, min_length = 100;
+  int height = 20, width = 30, main_min_length = 100,
+      secondary_min_length = 1, secondary_max_length = 10;
 
   initialize(height, width);
 
-  generate(height, width, min_length);
+  generate(height, width, main_min_length,
+           secondary_min_length, secondary_max_length);
 
   print(height, width);
 }
