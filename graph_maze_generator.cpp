@@ -1,5 +1,6 @@
 #include <iostream>
 #include <time.h>
+#include <cstdlib>
 
 #define HEIGHT 10
 #define WIDTH 10
