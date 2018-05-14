@@ -170,12 +170,11 @@ bool generate_path(node maze[HEIGHT][WIDTH], int height, int width, point start,
                    int min_length, int max_length, bool main_path){
   bool success = 0, end = 0, picked_directions[4];
   point pos = start, last = pos;
-  int length = 1, direction = 2, attempts = 0;
+  int length = 1, direction = 2, attempts = 0, last_direction;
 
   while(!end){
     attempts = 0;
     clear_picked_directions(picked_directions);
-
     while(pos.equal_to(last) && attempts < 5 && !end){
       move(pos, direction);
       attempts++;
@@ -188,6 +187,8 @@ bool generate_path(node maze[HEIGHT][WIDTH], int height, int width, point start,
               picked_directions[direction]){
           direction = rand()%4;
         }
+      } else {
+        last_direction = direction;
       }
 
       if(attempts > 4){
@@ -219,22 +220,49 @@ bool generate_path(node maze[HEIGHT][WIDTH], int height, int width, point start,
     }
   }
 
+  if(main_path && success){
+    switch(last_direction){
+      case 0:{
+        maze[pos.y][pos.x].left = 1;
+        break;
+      }
+      case 1:{
+        maze[pos.y][pos.x].up = 1;
+        break;
+      }
+      case 2:{
+        maze[pos.y][pos.x].right = 1;
+        break;
+      }
+      case 3:{
+        maze[pos.y][pos.x].down = 1;
+        break;
+      }
+    }
+  }
+
   return success;
 }
 
 void generate(node maze[HEIGHT][WIDTH], int height, int width,
               int main_min_length, int main_max_length,
               int secondary_min_length, int secondary_max_length){
-  point start(0, rand()%height + 1);
+  point start(0, rand()%height-1);
   int length = 0;
   bool success = 0;
 
+  if(start.y < 0){
+    start.y = 0;
+  }
+
+  maze[start.y][start.x].left = 1;
   while(!success){
     cout << "try\n";
     success = generate_path(maze, height, width, start, main_min_length, main_max_length, 1);
 
     if(!success){
       clear_maze(maze, height, width);
+      maze[start.y][start.x].left = 1;
     }
   }
 }
