@@ -117,6 +117,46 @@ bool in_bounds(int height, int width, point pos){
          (pos.y >= 0 && pos.y < height);
 }
 
+void look_around(node maze[HEIGHT][WIDTH], int height, int width,
+                 point &pos, int &direction){
+  int offset_x[] = {-1,  0, 1, 0},
+      offset_y[] = { 0, -1, 0, 1};
+  point checking;
+
+  for(int i = 0; i < 4; i++){
+    checking.x = pos.x + offset_x[i];
+    checking.y = pos.y + offset_y[i];
+
+    if(in_bounds(height, width, checking) &&
+       maze[checking.y][checking.x].used()){
+      direction = (i+2)%4;
+      return;
+    }
+  }
+
+  pos.x = -1;
+  pos.y = -1;
+}
+
+void find_unused(node maze[HEIGHT][WIDTH], int height, int width,
+                  point &pos, int &direction){
+  pos.x = -1;
+  pos.y = -1;
+  for(int i = 0; i < height; i++){
+    for(int j = 0; j < width; j++){
+      if(!maze[i][j].used()){
+        pos.x = j;
+        pos.y = i;
+        look_around(maze, height, width, pos, direction);
+
+        if(in_bounds(height, width, pos)){
+          return;
+        }
+      }
+    }
+  }
+}
+
 void move(point &pos, int direction){
   int offset_x[] = {-1,  0, 1, 0},
       offset_y[] = { 0, -1, 0, 1};
@@ -164,6 +204,38 @@ void connect(node maze[HEIGHT][WIDTH], point a, point b, int direction){
       break;
     }
   }
+}
+
+void make_secondary_opening(node maze[HEIGHT][WIDTH],
+                            point pos, int direction){
+  point start;
+  switch(direction){
+    case 0:{
+      start.x = pos.x + 1;
+      start.y = pos.y;
+
+      break;
+    }
+    case 1:{
+      start.x = pos.x;
+      start.y = pos.y + 1;
+
+      break;
+    }
+    case 2:{
+      start.x = pos.x - 1;
+      start.y = pos.y;
+
+      break;
+    }
+    case 3:{
+      start.x = pos.x;
+      start.y = pos.y - 1;
+
+      break;
+    }
+  }
+  connect(maze, start, pos, direction);
 }
 
 bool generate_path(node maze[HEIGHT][WIDTH], int height, int width, point start,
@@ -248,7 +320,7 @@ void generate(node maze[HEIGHT][WIDTH], int height, int width,
               int main_min_length, int main_max_length,
               int secondary_min_length, int secondary_max_length){
   point start(0, rand()%height-1);
-  int length = 0;
+  int start_direction;
   bool success = 0;
 
   if(start.y < 0){
@@ -257,13 +329,21 @@ void generate(node maze[HEIGHT][WIDTH], int height, int width,
 
   maze[start.y][start.x].left = 1;
   while(!success){
-    cout << "try\n";
     success = generate_path(maze, height, width, start, main_min_length, main_max_length, 1);
 
     if(!success){
       clear_maze(maze, height, width);
       maze[start.y][start.x].left = 1;
     }
+  }
+
+  find_unused(maze, height, width, start, start_direction);
+  while(in_bounds(height, width, start)){
+    make_secondary_opening(maze, start, start_direction);
+    generate_path(maze, height, width, start,
+                  secondary_min_length, secondary_max_length, 0);
+
+    find_unused(maze, height, width, start, start_direction);
   }
 }
 
